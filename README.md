@@ -236,3 +236,76 @@ On retrouve d'abord l'ID ou le nom via `docker ps`. Ici l'ID du conteneur étant
 Server running at http://0.0.0.0:3000/
 ```
 
+## CI/CD
+
+Si Docker est en soi un outil précieux pour les développeurs, il fait le plus souvent partie d'une panoplie d'outils.
+
+Dans la démarche DevOps, on retrouve souvent les acronymes CI et CD.
+
+### Brèves définitions et explications
+
+[plus de détails](https://www.redhat.com/fr/topics/devops/what-is-ci-cd).
+
+#### CI = _Continuous Integration_ = Intégration Continue.
+
+Cela désigne un processus d'automatisation pour les développeurs.
+
+Concrètement, il s'agit de faire en sorte que notre (nos) application(s) soi(en)t toujours dans un état livrable.
+
+Dès qu'un(e) développeur(se) pousse ses modifications sur un dépôt Git, on va, par exemple :
+
+* _linter_ le code (vérifier les erreurs et le respect des conventions de codage)
+* éventuellement lancer une analyse du code, via des outils tels que SonarQube - permettant de détecter des mauvaises pratiques (duplication de code), des vulnérabilités (par ex. aux injections SQL)
+* lancer des suites de tests automatisés
+
+On peut conditionner le merge de Pull Requests au passage avec succès de ces différentes vérifications.
+
+#### CD = _Continuous Delivery_ ou _Continuous Deployment_
+
+Traduits par livraison continue ou déploiement continu, termes relativement interchangeables.
+
+* Livraison continue. Par ex. : re-build des images Docker, une fois la phase CI passée.
+* Déploiement continu. Par ex. : une fois les images Docker re-buildées, les récupérer automatiquement depuis le serveur de production, et relancer les conteneurs à partir des images mises à jour.
+
+### Outils
+
+D'innombrables outils de CI/CD sont disponibles, et l'offre s'est considérablement accrue ces dernières années.
+
+On peut citer :
+
+* Jenkins, vénérable ancêtre, Open Source, très extensible, relativement complexe à configurer, et à l'interface... désuète (pour rester poli)
+* Travis CI,
+* GitLab,
+* GitHub Actions,
+* TeamCity (JetBrains),
+* etc.
+
+GitLab et GitHub offrent des solutions très intégrées puisqu'ils offrent à la fois des dépôts de code source, des registres d'images Docker, et la possibilité de mettre en oeuvre tout le cycle d'intégration/livraision/déploiement continus.
+
+Nous allons utiliser Drone CI, outil moins connu, mais qui présente l'avantage d'être très léger, et déployable sur une machine locale.
+
+Nous allons également utiliser Gitea, clone Open Source de GitHub.
+
+Les schémas d'ensemble qui suivent peuvent aider à comprendre leurs rôles respectifs dans le cycle CI/CD.
+
+Dans ce 1er schéma, le "G" en 2 représente Gogs, outil qui a précédé Gitea. En 3-4 on trouve Drone CI.
+
+![CI/CD](https://raw.githubusercontent.com/nazmulb/drone.io/master/images/cicd.png)
+
+Ce 2ème schéma est plus complet et montre que Drone n'est pas une application "monolithique", mais est composée de plusieurs "briques" :
+
+![Drone arch](https://miro.medium.com/max/1400/0*_QSWVDyXD_jLyxGW)
+
+### Mise en place de Gitea et Drone CI
+
+Nous allons utiliser Docker pour déployer Gitea et Drone CI sur une machine locale.
+
+Gitea est déployable via l'image Docker `gitea`. Drone, quant à lui, est composé d'un _serveur_ et d'au moins un _runner_ (nous en utiliserons deux).
+
+Nous utiliserons également l'image Docker `registry`, ce qui nous permettra de disposer d'un registre d'images privé.
+
+Nous aurions pu utiliser le Docker Hub. Mais cela présuppose d'avoir un compte et de s'authentifier pour pouvoir pousser des images. Or, il s'avère que ce n'est pas si simple qu'il n'y paraît de le faire avec Drone. Le registre privé fonctionnera localement et sans authentification (ce qui économisera au passage de la bande passante).
+
+Nous pourrions lancer ces différents composants via de multiples invocations de `docker run`. Mais d'une part, chaque conteneur doit être lancé avec un certain nombre de paramètres pour fonctionner correctement : ce qui nous amènerait à saisir (ou copier/coller) de très longues lignes de commande dans le terminal. D'autre part, il serait plus pratique de lancer tous ces conteneurs simultanément.
+
+Nous allons donc utiliser Docker Compose, "orchestrateur", qui permet de coordonner le lancement de plusieurs conteneurs, et également de configurer simplement un "réseau interne" à Docker leur permettant de communiquer entre eux.
