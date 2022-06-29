@@ -33,6 +33,12 @@ La conteneurisation est, par comparaison à la virtualisation, économe en resso
 
 > À noter : Docker n'est pas le seul système de conteneurisation. Il existe une certaine interopérabilité entre différents systèmes, via l'utilisation d'_images_ qui respectent un format standardisé.
 
+### Cas d'utilisation et avantages
+
+* En "packageant" une application et ses dépendances dans une "image" exécutable n'importe où, on s'affranchit de problèmes comme, par exemple, l'incompatibilité d'une application avec certaines bibliothèques (ou versions de ces bibliothèques) installées sur le système cible.
+* De fait, on peut, dans une équipe de développeurs, créer, via Docker, un environnement de travail standardisé, que tout le monde va pouvoir récupérer et utiliser tel quel, quel que soit l'OS utilisé.
+* Plus intéressant encore, Docker rend le déploiement d'applications beaucoup plus aisé. À partir du moment où Docker est installé sur un serveur, on pourra lancer des applications serveur web, des bases de données, etc. dans Docker, sans casse-têtes de configuration.
+
 ## Images et conteneurs
 
 Parmi les concepts importants :
@@ -138,4 +144,8 @@ Vous pouvez supprimer une image via la combinaison repository + tag ou via son I
 
 * `docker rmi hello-world:latest`,
 * ou `docker rmi feb5d9fea6a5`
+
+## Conteneuriser une application
+
+Récupérer des images "prêtes à l'emploi" du Docker Hub ou d'un autre registre est une chose. Mais comment "packager" ses propres applications dans des images Docker ?
 
