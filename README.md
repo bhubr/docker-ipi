@@ -309,3 +309,46 @@ Nous aurions pu utiliser le Docker Hub. Mais cela présuppose d'avoir un compte 
 Nous pourrions lancer ces différents composants via de multiples invocations de `docker run`. Mais d'une part, chaque conteneur doit être lancé avec un certain nombre de paramètres pour fonctionner correctement : ce qui nous amènerait à saisir (ou copier/coller) de très longues lignes de commande dans le terminal. D'autre part, il serait plus pratique de lancer tous ces conteneurs simultanément.
 
 Nous allons donc utiliser Docker Compose, "orchestrateur", qui permet de coordonner le lancement de plusieurs conteneurs, et également de configurer simplement un "réseau interne" à Docker leur permettant de communiquer entre eux.
+
+Docker Compose fonctionne avec un (ou plusieurs) fichier(s) de configuration au format YAML. Nous en utiliserons un seul, avec le nom standard `docker-compose.yml`. 
+
+#### Récupération du dépôt, modification du script de démarrage
+
+Vous allez pouvoir cloner ce dépôt : <https://github.com/bhubr/drone-gitea-windows> (https://github.com/bhubr/drone-gitea-windows) (largement basé sur un [Gist](https://gist.github.com/ruanbekker/3847bbf1b961efc568b93ccbf5c6f9f6) de Ruan Bekker, spécialiste DevOps).
+
+Il contient deux fichiers :
+
+* le `docker-compose.yml`
+* un script Bash permettant de lancer Docker Compose, en positionnant au préalable des variables d'environnement nécessaires au bon fonctionnement de l'ensemble.
+
+> ⚠️ **Important** : installez [Git Bash](https://gitforwindows.org/) si vous ne l'avez pas déjà.
+
+Il va falloir procéder en plusieurs étapes...
+
+Avant de commencer, il va vous falloir récupérer votre adresse IP sur le réseau local. Notamment parce que, du fait du setup utilisé, nous ne pourrons pas utiliser simplement `localhost` ou `127.0.0.1`. Votre adresse IP doit ressembler à `10.29.17.46`.
+
+Sous Windows, pour la retrouver, lancez un terminal puis saisissez `ipconfig`. Dans cette capture, l'adresse (192.168.1.67) est celle d'un PC connecté en filaire sur réseau domestique. Cherchez celle dans la liste qui commence par `10.29`.
+
+![ipconfig](ipconfig-windows.png)
+
+**Ouvrez** le fichier `deploy.sh` avec votre IDE et à la ligne `IP_ADDRESS`, remplacez `192.168.1.67` par votre propre IP. Vous pouvez (mais ça ne changera, à vrai dire, rien) remplacer le "username" pour Drone, `rbekker87`, par un pseudo qui vous convient.
+
+#### Lancement initial de Docker Compose
+
+Lancez Docker Compose avec `bash deploy.sh` (qui appelle `docker-compose up`).
+
+Vous allez ensuite procéder à la _vérification_ du bon fonctionnement de Gitea, et à la _finalisation_ de son installation.
+
+:warning: Ici il faut procéder avec précaution ! :warning:.
+
+Ouvrez dans votre navigateur <http://10.29.x.y:3000>, en adaptant à votre adresse IP spécifique. Vous arriverez sur la page d'installation de Gitea.
+
+![Gitea install](gitea-install.png)
+
+Il n'y a rien à changer. Scrollez jusqu'en bas et cliquez tout simplement "Install Gitea".
+
+Vous allez avoir un écran indiquant que la connexion à Gitea ne marche plus, mais si vous rafraîchissez la page après 2-3 secondes, vous arriverez sur l'écran d'accueil de Gitea (qui aura installé, entretemps, sa base de données, et crée ses fichiers de config).
+
+Créez un premier utilisateur en _notant bien le username et mot de passe_ (faites simple !).
+
+#### 
