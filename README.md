@@ -145,7 +145,94 @@ Vous pouvez supprimer une image via la combinaison repository + tag ou via son I
 * `docker rmi hello-world:latest`,
 * ou `docker rmi feb5d9fea6a5`
 
+Ici l'image `hello-world` est très légère, mais certaines images (par ex. GitLab) peuvent dépasser les 1Go voire plus.
+
 ## Conteneuriser une application
 
 Récupérer des images "prêtes à l'emploi" du Docker Hub ou d'un autre registre est une chose. Mais comment "packager" ses propres applications dans des images Docker ?
+
+Un exemple très simple avec Node.js. Créez un nouveau dossier, par ex. `node-hello-world`. Créez-y un fichier `index.js` contenant ce code (c'est l'exemple de la page [About](https://nodejs.org/en/about/) de Node.js, très légèrement adapté) :
+
+```javascript
+const http = require('http');
+
+const hostname = '0.0.0.0';
+const port = 3000;
+
+const server = http.createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('Hello World');
+});
+
+server.listen(port, hostname, () => {
+  console.log(`Server running at http://${hostname}:${port}/`);
+});
+```
+
+Puis créez un deuxième fichier nommé `Dockerfile` (attention à la casse et &rarr; `D` en début de fichier), contenant :
+
+```
+FROM node:16-alpine
+
+WORKDIR /app
+
+COPY index.js .
+
+CMD node index
+```
+
+C'est le `Dockerfile` qui va permettre de **construire** ou "builder" une image, à partir d'une suite d'"instructions". Le Dockerfile ci-dessus est, à peu de choses près, le plus simple qui soit.
+
+* Un Dockerfile commence toujours par `FROM` suivi du nom d'une **image de base**. Si on "package" une application Node.js, on va utiliser une image contenant déjà Node.js (ainsi que les packages managers `npm` et `yarn`). Ici `node` avec le tag `16-alpine` (version 16 de Node, installée sur une base Linux Alpine, distribution Linux très légère)
+* Une bonne pratique est d'indiquer le "dossier de travail", autrement dit le _dossier depuis lequel l'application va être lancée, dans le conteneur_. On le définit via `WORKDIR` suivi du nom du dossier (qui sera créé s'il n'existe pas).
+* On va ensuite *copier dans l'image* les fichiers dont on a besoin pour lancer notre application (et éventuellement, pour la compiler au préalable, dans le cas de langages comme Java, C#, TypeScript...). Ceci via la commande `COPY`. Ici la source est notre `index.js`, et la destination, `.`, signifiant habituellement le "dossier courant", se réfère ici au workdir.
+* Enfin, le Dockerfile se termine par `CMD` : la commande/application qui doit être exécutée dans le conteneur. *Un* conteneur exécute habituellement *une* application.
+
+Une fois le Dockerfile écrit, on va le "builder" pour aboutir à une image, laquelle sera nommée (`node-hello-world`) et "taggée"/versionnée (`latest`). Notez qu'on termine la commander `docker build` par le dossier courant `.` (cette fois ci au sens de dossier où on se trouve dans notre terminal) : c'est l'emplacement où Docker va chercher le `Dockerfile` à builder.
+
+```
+docker build -t node-hello-world:latest .
+```
+
+Résultat :
+
+```
+[+] Building 0.2s (8/8) FINISHED
+ => [internal] load build definition from Dockerfile                                                               0.0s
+ => => transferring dockerfile: 104B                                                                               0.0s
+ => [internal] load .dockerignore                                                                                  0.0s
+ => => transferring context: 2B                                                                                    0.0s
+ => [internal] load metadata for docker.io/library/node:16-alpine                                                  0.0s
+ => [1/3] FROM docker.io/library/node:16-alpine                                                                    0.0s
+ => [internal] load build context                                                                                  0.0s
+ => => transferring context: 373B                                                                                  0.0s
+ => CACHED [2/3] WORKDIR /app                                                                                      0.0s
+ => [3/3] COPY index.js .                                                                                          0.0s
+ => exporting to image                                                                                             0.0s
+ => => exporting layers                                                                                            0.0s
+ => => writing image sha256:f71aa4dd43a1b967c96bbc88dcd8a9567a57ab5ddc597cabd418036180cceccc                       0.0s
+ => => naming to docker.io/library/node-hello-world:latest                                                         0.0s
+
+Use 'docker scan' to run Snyk tests against images to find vulnerabilities and learn how to fix them
+```
+
+On peut enfin lancer un conteneur à partir de cette image :
+
+```
+docker run -p 8000:3000 -d node-hello-world:latest
+```
+
+Notez les paramètres :
+
+* `-p 8000:3000` : côté réseau, le conteneur est relativement isolé du système hôte. L'app, écoutant sur le port 3000 dans le conteneur, sera inaccessible si on ne "publie" rend pas ce port accessible depuis l'extérieur du conteneur. Ici, on rend le port 3000 du conteneur accessible via le port 8000 du système hôte. Si vous ouvrez votre navigateur sur <http://localhost:8000>, vous verrez apparaître le message "Hello World".
+* `-d` pour "daemonize" permet de lancer l'app en arrière-plan, afin de ne pas "bloquer" le terminal.
+
+Du fait de l'utilisation de `-d`, les éventuels messages imprimés sur la "sortie standard" du système n'apparaissent plus, contrairement à ce qui s'est passé lors de l'exécution du `hello-world` de Docker. Pour visualiser les messages émis par l'application, on peut se servir de `docker logs` suivi de l'ID ou du nom du conteneur.
+
+On retrouve d'abord l'ID ou le nom via `docker ps`. Ici l'ID du conteneur étant `ae3732c8c92b`, puis on peut lancer `docker logs ae37` pour voir s'afficher :
+
+```
+Server running at http://0.0.0.0:3000/
+```
 
